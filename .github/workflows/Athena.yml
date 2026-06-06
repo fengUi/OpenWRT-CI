@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: MIT
+
+name: Athena
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/Athena.yml"
+      - ".github/workflows/WRT-CORE.yml"
+      - "Config/ATHENA.txt"
+      - "Config/GENERAL.txt"
+      - "Scripts/**"
+  workflow_dispatch:
+    inputs:
+      PACKAGE:
+        description: "Extra OpenWrt config lines, one per line"
+        required: false
+        type: string
+      TEST:
+        description: "Only generate config, do not compile firmware"
+        default: false
+        required: false
+        type: boolean
+
+permissions: write-all
+
+jobs:
+  build:
+    name: JDCloud AX1800 Pro
+    uses: ./.github/workflows/WRT-CORE.yml
+    with:
+      WRT_CONFIG: ATHENA
+      WRT_THEME: bootstrap
+      WRT_NAME: ATHENA
+      WRT_SSID: ATHENA
+      WRT_WORD: "12345678"
+      WRT_IP: 192.168.20.1
+      WRT_PW: none
+      WRT_REPO: https://github.com/VIKINGYFY/immortalwrt.git
+      WRT_BRANCH: main
+      WRT_SOURCE: VIKINGYFY/immortalwrt
+      WRT_PACKAGE: ${{ inputs.PACKAGE }}
+      WRT_TEST: ${{ inputs.TEST || 'false' }}

@@ -1,50 +1,29 @@
-# OpenWRT-CI
+# Athena OpenWrt CI
 
-官方版：
+GitHub Actions build config for JDCloud AX1800 Pro / Athena / `jdcloud_re-ss-01`.
 
-https://github.com/immortalwrt/immortalwrt.git
+## Target
 
-自用版：
+- Source: `https://github.com/VIKINGYFY/immortalwrt.git`
+- Branch: `main`
+- Platform: `qualcommax/ipq60xx`
+- Device: `jdcloud_re-ss-01`
+- Default LAN IP: `192.168.20.1`
 
-https://github.com/VIKINGYFY/immortalwrt.git
+## Included Packages
 
-# U-BOOT
+- `mwan3`
+- `luci-app-mwan3`
+- `iptables-mod-ipopt`
+- `kmod-ipt-ipopt`
+- `lucky`
+- `luci-app-lucky`
+- `luci-app-ssr-plus`
+- `shadowsocksr-libev`
+- `xray-core`
 
-高通版-沉心：
+## Build
 
-https://github.com/chenxin527/uboot-ipq60xx-emmc-build.git
+Push to `main`, or run the `Athena` workflow manually.
 
-https://github.com/chenxin527/uboot-ipq60xx-nand-build.git
-
-https://github.com/chenxin527/uboot-ipq60xx-nor-build.git
-
-高通版-小猪：
-
-https://github.com/1980490718/u-boot-2016.git
-
-联发科-全新版：
-
-https://github.com/VIKINGYFY/UBOOT-CI/releases
-
-联发科-官方版：
-
-https://drive.wrt.moe/uboot/mediatek
-
-# 固件简要说明
-
-固件每天早上5点自动编译。
-
-固件信息里的时间为编译开始的时间，方便核对上游源码提交时间。
-
-MEDIATEK系列、QUALCOMMAX系列、ROCKCHIP系列、X86系列。
-
-# 目录简要说明
-
-workflows——自定义CI配置
-
-Scripts——自定义脚本
-
-Config——自定义配置
-
-#
-[![Stargazers over time](https://starchart.cc/VIKINGYFY/OpenWRT-CI.svg?variant=adaptive)](https://starchart.cc/VIKINGYFY/OpenWRT-CI)
+The firmware is uploaded as a workflow artifact and also published as a GitHub Release.
