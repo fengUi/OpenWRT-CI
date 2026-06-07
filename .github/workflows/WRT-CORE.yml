@@ -176,6 +176,12 @@ jobs:
 
           make defconfig -j$(nproc) && make clean -j$(nproc)
 
+          if ! grep -q '^CONFIG_TARGET_qualcommax_ipq60xx_DEVICE_jdcloud_re-ss-01=y' .config; then
+            echo "ERROR: jdcloud_re-ss-01 target was not selected by defconfig" >&2
+            grep -E '^CONFIG_TARGET_qualcommax_ipq60xx_DEVICE_|^CONFIG_TARGET_PROFILE=' .config >&2 || true
+            exit 1
+          fi
+
       - name: Download Packages
         if: env.WRT_TEST != 'true'
         run: |
