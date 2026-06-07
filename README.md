@@ -4,8 +4,8 @@ GitHub Actions build config for JDCloud AX1800 Pro / Athena / `jdcloud_re-ss-01`
 
 ## Target
 
-- Source: `https://github.com/openwrt/openwrt.git`
-- Branch: `main`
+- Source: `https://github.com/VIKINGYFY/immortalwrt.git`
+- Branch: `owrt`
 - Platform: `qualcommax/ipq60xx`
 - Device: `jdcloud_re-ss-01`
 - Default LAN IP: `192.168.20.1`

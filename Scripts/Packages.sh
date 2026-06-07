@@ -34,6 +34,9 @@ UPDATE_PACKAGE "lucky" "gdy666/luci-app-lucky" "main" "" "luci-app-lucky"
 # SSR Plus+ and its common dependencies.
 UPDATE_PACKAGE "helloworld" "fw876/helloworld" "master"
 
+# Remove management / AC controller packages if inherited from feeds.
+find ./ ../feeds/luci/ ../feeds/packages/ -maxdepth 3 -type d \( -iname "gecoosac" -o -iname "luci-app-gecoosac" \) -prune -exec rm -rf {} + 2>/dev/null || true
+
 if [ -f "$GITHUB_WORKSPACE/Scripts/PRIVATE.sh" ]; then
 	source "$GITHUB_WORKSPACE/Scripts/PRIVATE.sh"
 fi
