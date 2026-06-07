@@ -34,6 +34,52 @@ UPDATE_PACKAGE "lucky" "gdy666/luci-app-lucky" "main" "" "luci-app-lucky"
 # SSR Plus+ and its common dependencies.
 UPDATE_PACKAGE "helloworld" "fw876/helloworld" "master"
 
+# HWRT SSR Plus+ backups can contain Hysteria2 nodes without local_port.
+# Without a node local_port, SSR Plus+ generates Xray/Hysteria configs with
+# empty inbounds and transparent proxy traffic has nowhere to enter.
+SSR_INIT="$(find ./helloworld -path "*/luci-app-ssr-plus/root/etc/init.d/shadowsocksr" -type f | head -n 1)"
+if [ -n "$SSR_INIT" ]; then
+	python3 - <<'PY' "$SSR_INIT"
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+text = path.read_text()
+
+helper = r'''
+get_node_local_port() {
+	local port="$(uci_get_by_name "$1" local_port)"
+	[ -n "$port" ] || port="$(uci_get_by_type global default_node_local_port 1234)"
+	[ -n "$port" ] || port="1234"
+	echo "$port"
+}
+'''
+
+if "get_node_local_port()" not in text:
+	text = text.replace(
+		'uci_get_by_cfgid() {\n'
+		'\tlocal ret=$(uci show $NAME.@$1[0].$2 | awk -F \'.\' \'{print $2}\' 2>/dev/null)\n'
+		'\techo ${ret:=$3}\n'
+		'}\n',
+		'uci_get_by_cfgid() {\n'
+		'\tlocal ret=$(uci show $NAME.@$1[0].$2 | awk -F \'.\' \'{print $2}\' 2>/dev/null)\n'
+		'\techo ${ret:=$3}\n'
+		'}\n' + helper
+	)
+
+text = text.replace(
+	'\tlocal tcp_port=$(uci_get_by_name $GLOBAL_SERVER local_port)\n',
+	'\tlocal tcp_port=$(get_node_local_port $GLOBAL_SERVER)\n'
+)
+text = text.replace(
+	'\tlocal local_port=$(uci_get_by_name $GLOBAL_SERVER local_port)\n',
+	'\tlocal local_port=$(get_node_local_port $GLOBAL_SERVER)\n'
+)
+
+path.write_text(text)
+PY
+fi
+
 # Remove management / AC controller packages if inherited from feeds.
 find ./ ../feeds/luci/ ../feeds/packages/ -maxdepth 3 -type d \( -iname "gecoosac" -o -iname "luci-app-gecoosac" \) -prune -exec rm -rf {} + 2>/dev/null || true
 
