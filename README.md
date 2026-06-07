@@ -22,6 +22,12 @@ GitHub Actions build config for JDCloud AX1800 Pro / Athena / `jdcloud_re-ss-01`
 - `shadowsocksr-libev`
 - `xray-core`
 
+## Update Check
+
+The firmware includes `/usr/bin/athena-upgrade-check`.
+
+It checks the latest GitHub Release every day at 04:20 and writes a notice to `/tmp/athena-upgrade.notice` when a new `jdcloud_re-ss-01` sysupgrade image is available. It only checks and notifies; it does not flash firmware automatically.
+
 ## Build
 
 Push to `main`, or run the `Athena` workflow manually.

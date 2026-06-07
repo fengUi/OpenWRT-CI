@@ -1,0 +1,45 @@
+#!/bin/sh
+
+REPO="fengUi/OpenWRT-CI"
+API_URL="https://api.github.com/repos/${REPO}/releases/latest"
+BUILD_FILE="/etc/athena-build"
+NOTICE_FILE="/tmp/athena-upgrade.notice"
+STATE_FILE="/tmp/athena-upgrade-latest"
+
+current="unknown"
+[ -f "$BUILD_FILE" ] && current="$(cat "$BUILD_FILE")"
+
+json="$(curl -fsSL "$API_URL" 2>/dev/null)"
+if [ -z "$json" ]; then
+	logger -t athena-upgrade "failed to query latest release"
+	exit 1
+fi
+
+tag="$(printf '%s\n' "$json" | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p' | head -n 1)"
+firmware_url="$(printf '%s\n' "$json" | grep 'browser_download_url' | grep 'jdcloud_re-ss-01' | grep -i 'sysupgrade' | sed -n 's/.*"browser_download_url": *"\([^"]*\)".*/\1/p' | head -n 1)"
+sha_url="$(printf '%s\n' "$json" | grep 'browser_download_url' | grep 'sha256sums' | sed -n 's/.*"browser_download_url": *"\([^"]*\)".*/\1/p' | head -n 1)"
+
+if [ -z "$tag" ] || [ -z "$firmware_url" ]; then
+	logger -t athena-upgrade "latest release found, but no jdcloud_re-ss-01 sysupgrade image"
+	exit 1
+fi
+
+if [ "$tag" = "$current" ]; then
+	rm -f "$NOTICE_FILE" "$STATE_FILE"
+	logger -t athena-upgrade "firmware is current: $current"
+	exit 0
+fi
+
+{
+	echo "New Athena firmware is available."
+	echo "Current: $current"
+	echo "Latest: $tag"
+	echo "Firmware: $firmware_url"
+	[ -n "$sha_url" ] && echo "SHA256: $sha_url"
+	echo
+	echo "This script only checks updates. It does not flash firmware automatically."
+} > "$NOTICE_FILE"
+
+printf '%s\n' "$tag" > "$STATE_FILE"
+logger -t athena-upgrade "new firmware available: $tag"
+cat "$NOTICE_FILE"

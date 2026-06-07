@@ -11,6 +11,7 @@ on:
       - ".github/workflows/WRT-CORE.yml"
       - "Config/ATHENA.txt"
       - "Config/GENERAL.txt"
+      - "Files/**"
       - "Scripts/**"
   workflow_dispatch:
     inputs:
