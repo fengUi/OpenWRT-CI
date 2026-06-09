@@ -62,7 +62,7 @@ env:
 jobs:
   core:
     name: ${{inputs.WRT_SOURCE}}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout Projects
         uses: actions/checkout@main
@@ -176,6 +176,12 @@ jobs:
 
           make defconfig -j$(nproc) && make clean -j$(nproc)
 
+          if [[ "$WRT_CONFIG" == "ATHENA" ]] && ! grep -q '^CONFIG_TARGET_qualcommax_ipq60xx_DEVICE_jdcloud_re-ss-01=y' .config; then
+            echo "ERROR: jdcloud_re-ss-01 target was not selected by defconfig" >&2
+            grep -E '^CONFIG_TARGET_qualcommax_ipq60xx_DEVICE_|^CONFIG_TARGET_PROFILE=' .config >&2 || true
+            exit 1
+          fi
+
       - name: Download Packages
         if: env.WRT_TEST != 'true'
         run: |
@@ -212,19 +218,44 @@ jobs:
             echo "WRT_KVER=$(find ./bin/targets/ -type f -name "*.manifest" -exec grep -oP '^kernel - \K[\d\.]+' {} \;)" >> $GITHUB_ENV
             echo "WRT_LIST=$(find ./bin/targets/ -type f -name "*.manifest" -exec grep -oP '^luci-(app|theme)[^ ]*' {} \; | tr '\n' ' ')" >> $GITHUB_ENV
 
-            find ./bin/targets/ -iregex ".*\(buildinfo\|json\|sha256sums\|packages\)$" -exec rm -rf {} +
+            if [[ "$WRT_CONFIG" == "ATHENA" ]]; then
+              DEVICE_ID="jdcloud_re-ss-01"
+              SYSUPGRADE="$(find ./bin/targets/ -type f -iname "*${DEVICE_ID}*sysupgrade*.bin" | head -n 1)"
+              FACTORY="$(find ./bin/targets/ -type f -iname "*${DEVICE_ID}*factory*.bin" | head -n 1)"
+              MANIFEST="$(find ./bin/targets/ -type f -name "*.manifest" | head -n 1)"
+              SHA256SUMS="$(find ./bin/targets/ -type f -name "sha256sums" | head -n 1)"
 
-            for FILE in $(find ./bin/targets/ -type f -iname "*$WRT_TARGET*") ; do
-              EXT=$(basename $FILE | cut -d '.' -f 2-)
-              NAME=$(basename $FILE | cut -d '.' -f 1 | grep -io "\($WRT_TARGET\).*")
-              NEW_FILE="$NAME"-"$WRT_INFO"-"$WRT_BRANCH"-"$WRT_WIFI"-"$WRT_DATE"."$EXT"
-              mv -f $FILE ./upload/$NEW_FILE
-            done
+              if [ -z "$SYSUPGRADE" ]; then
+                echo "ERROR: missing ${DEVICE_ID} sysupgrade image" >&2
+                find ./bin/targets/ -maxdepth 5 -type f -print >&2
+                exit 1
+              fi
 
-            find ./bin/targets/ -type f -exec mv -f {} ./upload/ \;
+              cp -f "$SYSUPGRADE" ./upload/
+              [ -n "$FACTORY" ] && cp -f "$FACTORY" ./upload/
+              [ -n "$MANIFEST" ] && cp -f "$MANIFEST" ./upload/
+              [ -n "$SHA256SUMS" ] && cp -f "$SHA256SUMS" ./upload/
+            else
+              find ./bin/targets/ -iregex ".*\(buildinfo\|json\|sha256sums\|packages\)$" -exec rm -rf {} +
+
+              for FILE in $(find ./bin/targets/ -type f -iname "*$WRT_TARGET*") ; do
+                EXT=$(basename $FILE | cut -d '.' -f 2-)
+                NAME=$(basename $FILE | cut -d '.' -f 1 | grep -io "\($WRT_TARGET\).*")
+                NEW_FILE="$NAME"-"$WRT_INFO"-"$WRT_BRANCH"-"$WRT_WIFI"-"$WRT_DATE"."$EXT"
+                mv -f $FILE ./upload/$NEW_FILE
+              done
+
+              find ./bin/targets/ -type f -exec mv -f {} ./upload/ \;
+            fi
 
             make clean -j$(nproc)
           fi
+
+      - name: Upload Firmware Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{env.WRT_CONFIG}}-${{env.WRT_DATE}}
+          path: ./wrt/upload/*.*
 
       - name: Release Firmware
         uses: softprops/action-gh-release@master

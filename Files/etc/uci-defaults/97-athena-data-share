@@ -1,0 +1,46 @@
+#!/bin/sh
+
+DATA_DIR="/mnt/data"
+WEBDAV_CONF="/etc/lighttpd/conf.d/99-athena-webdav.conf"
+
+mkdir -p "$DATA_DIR"
+mkdir -p /var/lib/lighttpd
+chmod 0777 "$DATA_DIR" 2>/dev/null || true
+
+if uci -q show samba4 >/dev/null 2>&1; then
+	uci -q delete samba4.athena_data >/dev/null 2>&1 || true
+	uci set samba4.athena_data='sambashare'
+	uci set samba4.athena_data.name='data'
+	uci set samba4.athena_data.path="$DATA_DIR"
+	uci set samba4.athena_data.read_only='no'
+	uci set samba4.athena_data.guest_ok='yes'
+	uci set samba4.athena_data.create_mask='0666'
+	uci set samba4.athena_data.dir_mask='0777'
+	uci set samba4.athena_data.force_root='1'
+	uci commit samba4
+
+	/etc/init.d/samba4 enable >/dev/null 2>&1 || true
+	/etc/init.d/samba4 restart >/dev/null 2>&1 || true
+fi
+
+mkdir -p /etc/lighttpd/conf.d
+cat > "$WEBDAV_CONF" <<'EOF'
+$SERVER["socket"] == ":8088" {
+	server.document-root = "/mnt/data"
+	webdav.activate = "enable"
+	webdav.is-readonly = "disable"
+	webdav.sqlite-db-name = "/var/lib/lighttpd/webdav.db"
+}
+EOF
+
+if [ -f /etc/lighttpd/lighttpd.conf ] && ! grep -q "/etc/lighttpd/conf.d/\\*.conf" /etc/lighttpd/lighttpd.conf; then
+	cat >> /etc/lighttpd/lighttpd.conf <<'EOF'
+
+include_shell "cat /etc/lighttpd/conf.d/*.conf 2>/dev/null"
+EOF
+fi
+
+/etc/init.d/lighttpd enable >/dev/null 2>&1 || true
+/etc/init.d/lighttpd restart >/dev/null 2>&1 || true
+
+exit 0

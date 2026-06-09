@@ -1,0 +1,10 @@
+#!/bin/sh
+
+grep -q "athena-upgrade-check" /etc/crontabs/root 2>/dev/null || {
+	echo "20 4 * * * /usr/bin/athena-upgrade-check >/tmp/athena-upgrade-check.log 2>&1" >> /etc/crontabs/root
+}
+
+/etc/init.d/cron enable >/dev/null 2>&1
+/etc/init.d/cron restart >/dev/null 2>&1
+
+exit 0

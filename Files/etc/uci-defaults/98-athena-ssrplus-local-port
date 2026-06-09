@@ -1,0 +1,21 @@
+#!/bin/sh
+
+DEFAULT_PORT="$(uci -q get shadowsocksr.@global[0].default_node_local_port)"
+[ -n "$DEFAULT_PORT" ] || DEFAULT_PORT="1234"
+
+if uci -q show shadowsocksr >/dev/null 2>&1; then
+	uci set shadowsocksr.@global[0].default_node_local_port="$DEFAULT_PORT" 2>/dev/null || true
+
+	uci show shadowsocksr 2>/dev/null | sed -n "s/^\(shadowsocksr\.[^.]*\)=servers$/\1/p" | while read -r section; do
+		[ -n "$(uci -q get "$section.local_port")" ] || uci set "$section.local_port=$DEFAULT_PORT"
+	done
+
+	main="$(uci -q get shadowsocksr.@global[0].global_server)"
+	if [ -n "$main" ] && [ "$main" != "nil" ]; then
+		[ -n "$(uci -q get "shadowsocksr.$main.local_port")" ] || uci set "shadowsocksr.$main.local_port=$DEFAULT_PORT"
+	fi
+
+	uci commit shadowsocksr
+fi
+
+exit 0

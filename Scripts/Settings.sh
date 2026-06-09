@@ -39,7 +39,18 @@ sed -i "s/hostname='.*'/hostname='$WRT_NAME'/g" $CFG_FILE
 echo "CONFIG_PACKAGE_luci=y" >> ./.config
 echo "CONFIG_LUCI_LANG_zh_Hans=y" >> ./.config
 echo "CONFIG_PACKAGE_luci-theme-$WRT_THEME=y" >> ./.config
-echo "CONFIG_PACKAGE_luci-app-$WRT_THEME-config=y" >> ./.config
+if [ "$WRT_THEME" != "bootstrap" ]; then
+	echo "CONFIG_PACKAGE_luci-app-$WRT_THEME-config=y" >> ./.config
+fi
+
+# Copy custom root filesystem files.
+if [ -d "$GITHUB_WORKSPACE/Files" ]; then
+	mkdir -p ./package/base-files/files/
+	cp -rf "$GITHUB_WORKSPACE/Files/." ./package/base-files/files/
+	chmod +x ./package/base-files/files/usr/bin/athena-upgrade-check 2>/dev/null || true
+	chmod +x ./package/base-files/files/etc/uci-defaults/* 2>/dev/null || true
+	echo "$WRT_CONFIG-$WRT_INFO-$WRT_BRANCH-$WRT_DATE" > ./package/base-files/files/etc/athena-build
+fi
 
 #引入私有扩展配置
 if [ -f "$GITHUB_WORKSPACE/Config/PRIVATE.txt" ]; then
