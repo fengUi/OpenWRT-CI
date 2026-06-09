@@ -18,6 +18,7 @@ GitHub Actions build config for JDCloud AX1800 Pro / Athena / `jdcloud_re-ss-01`
 - `kmod-ipt-ipopt`
 - `lucky`
 - `luci-app-lucky`
+- stable Lucky 3.0.0 wanji runtime override
 - `luci-app-ssr-plus`
 - `shadowsocksr-libev`
 - `xray-core`

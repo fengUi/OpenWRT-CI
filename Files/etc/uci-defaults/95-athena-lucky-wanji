@@ -1,0 +1,19 @@
+#!/bin/sh
+
+STABLE_LUCKY="/usr/libexec/lucky-3.0.0-wanji"
+
+if [ -s "$STABLE_LUCKY" ]; then
+	cp -f "$STABLE_LUCKY" /usr/bin/lucky
+	chmod 0755 /usr/bin/lucky
+fi
+
+if [ -f /etc/config/lucky ]; then
+	uci set lucky.@lucky[0].enabled='1' 2>/dev/null || true
+	uci set lucky.@lucky[0].configdir='/etc/config/lucky.daji' 2>/dev/null || true
+	uci commit lucky
+fi
+
+/etc/init.d/lucky enable >/dev/null 2>&1 || true
+/etc/init.d/lucky restart >/dev/null 2>&1 || true
+
+exit 0
